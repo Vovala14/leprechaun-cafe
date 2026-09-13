@@ -1,0 +1,25 @@
+# סודות — לעולם לא נכנסים ל-image. בייצור הם מגיעים ממשתני סביבה.
+.env
+.env.*
+certs/
+*.p12
+*.cer
+*.key
+*.pem
+*-service-account.json
+
+# נתונים מקומיים
+data/
+backups/
+tmp/
+
+# לא נחוץ בתוך ה-image
+node_modules/
+.git/
+.gitignore
+.github/
+README.md
+DEPLOY.md
+docker-compose.yml
+npm-debug.log*
+.DS_Store

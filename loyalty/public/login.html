@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>כניסת צוות · לפריקון</title>
+<meta name="theme-color" content="#1a6b3c">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main class="wrap" style="max-width:420px;padding-top:56px">
+  <header class="brand">
+    <div class="brand-mark" aria-hidden="true">☘️</div>
+    <h1 class="brand-name">כניסת צוות</h1>
+    <p class="brand-sub">מועדון הקפה של לפריקון</p>
+  </header>
+
+  <section class="card">
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="username">שם משתמש</label>
+        <input class="input ltr" id="username" name="username" type="text" autocomplete="username"
+               required autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+
+      <div class="field">
+        <label for="password">סיסמה</label>
+        <input class="input ltr" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+
+      <div id="error" class="alert err hidden" role="alert" style="margin-bottom:14px"></div>
+
+      <button class="btn big" type="submit" id="submitBtn">כניסה</button>
+    </form>
+  </section>
+
+  <p class="footer">הגישה מיועדת לצוות בית הקפה בלבד.</p>
+</main>
+
+<script type="module">
+import { $, api, setBusy } from '/js/common.js';
+
+const next = new URLSearchParams(location.search).get('next');
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = $('#error');
+  errorEl.classList.add('hidden');
+
+  const btn = $('#submitBtn');
+  setBusy(btn, true, 'מתחבר…');
+  try {
+    const res = await api('/staff/login', {
+      method: 'POST',
+      body: { username: $('#username').value.trim(), password: $('#password').value },
+    });
+    location.href = next || res.redirect;
+  } catch (err) {
+    setBusy(btn, false);
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+    $('#password').value = '';
+    $('#password').focus();
+  }
+});
+
+$('#username').focus();
+</script>
+</body>
+</html>
