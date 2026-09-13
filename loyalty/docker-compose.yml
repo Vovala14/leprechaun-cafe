@@ -1,0 +1,13 @@
+services:
+  loyalty:
+    build: .
+    container_name: leprechaun-loyalty
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./certs:/app/certs
+      - ./backups:/app/backups
+      - ./assets/pass:/app/assets/pass

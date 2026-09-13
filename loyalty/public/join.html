@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מועדון הקפה · קפה לפריקון</title>
+<meta name="description" content="הצטרפו למועדון הקפה של לפריקון — קונים 8 קפה, התשיעי עלינו. כרטיסייה דיגיטלית ישירות בארנק בטלפון.">
+<meta name="theme-color" content="#1a6b3c">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main class="wrap">
+  <header class="brand">
+    <div class="brand-mark" aria-hidden="true">☘️</div>
+    <h1 class="brand-name">מועדון הקפה של לפריקון</h1>
+    <p class="brand-sub" id="address">דרך ארץ 58, חריש</p>
+  </header>
+
+  <!-- תצוגה מקדימה של הכרטיסייה -->
+  <section class="punchcard" aria-label="תצוגה מקדימה של הכרטיסייה" style="margin-bottom:18px">
+    <div class="punchcard-top">
+      <div>
+        <div class="punchcard-label">כרטיסיית קפה</div>
+        <div class="punchcard-owner">הכרטיסייה שלך</div>
+      </div>
+      <div class="center">
+        <div class="punchcard-counter">0<small id="goalTop">/8</small></div>
+        <div class="punchcard-label">ניקובים</div>
+      </div>
+    </div>
+    <div class="dots" id="previewDots"></div>
+    <div class="punchcard-status" id="previewRule">קונים 8 קפה — התשיעי עלינו</div>
+  </section>
+
+  <section class="card">
+    <h2>הצטרפות — 20 שניות</h2>
+    <p class="lead">ממלאים פרטים, והכרטיסייה נכנסת ישר ל־Apple Wallet או Google Wallet. בלי אפליקציה, בלי כרטיס שמתקמט בארנק.</p>
+
+    <form id="joinForm" novalidate>
+      <div class="field">
+        <label for="name">שם מלא</label>
+        <input class="input" id="name" name="name" type="text" autocomplete="name" required
+               placeholder="ישראל ישראלי" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label for="phone">טלפון נייד</label>
+        <input class="input ltr" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel"
+               required placeholder="050-1234567" maxlength="20">
+        <span class="hint">משמש לזיהוי הכרטיסייה אם תחליפו טלפון</span>
+      </div>
+
+      <div class="field">
+        <label for="email">אימייל <span class="muted">(לא חובה)</span></label>
+        <input class="input ltr" id="email" name="email" type="email" autocomplete="email"
+               placeholder="you@example.com" maxlength="120">
+      </div>
+
+      <div id="formError" class="alert err hidden" role="alert" style="margin-bottom:14px"></div>
+
+      <button class="btn big" type="submit" id="submitBtn">קבלו את הכרטיסייה ☘️</button>
+
+      <p class="tiny muted center" style="margin-top:12px">
+        בהצטרפות אתם מאשרים קבלת עדכוני מועדון. הפרטים נשמרים אצלנו בלבד ולא מועברים לאף גורם.
+      </p>
+    </form>
+
+    <div class="divider">כבר חברים?</div>
+    <button class="btn ghost" type="button" id="recoverToggle">שחזור כרטיסייה קיימת</button>
+
+    <form id="recoverForm" class="hidden" style="margin-top:14px" novalidate>
+      <div class="field">
+        <label for="recoverPhone">הטלפון שאיתו נרשמתם</label>
+        <input class="input ltr" id="recoverPhone" type="tel" inputmode="tel" placeholder="050-1234567" maxlength="20">
+      </div>
+      <div id="recoverError" class="alert err hidden" role="alert" style="margin-bottom:12px"></div>
+      <button class="btn ghost" type="submit" id="recoverBtn">מצאו לי את הכרטיסייה</button>
+    </form>
+  </section>
+
+  <footer class="footer">
+    <div id="footerName">קפה לפריקון</div>
+    <div id="footerMeta"></div>
+  </footer>
+</main>
+
+<script type="module">
+import { $, api, toast, renderDots, setBusy } from '/js/common.js';
+
+let GOAL = 8;
+
+async function boot() {
+  try {
+    const cfg = await api('/api/config');
+    GOAL = cfg.goal;
+
+    $('#goalTop').textContent = `/${GOAL}`;
+    $('#previewRule').textContent = `קונים ${GOAL} קפה — ה־${GOAL + 1} עלינו`;
+    $('#address').textContent = cfg.business.address;
+    $('#footerName').textContent = cfg.business.name;
+    $('#footerMeta').innerHTML =
+      `${cfg.business.address} · <a href="tel:${cfg.business.phone}">${cfg.business.phone}</a>`;
+    document.title = `מועדון הקפה · ${cfg.business.name}`;
+  } catch {
+    /* ברירות מחדל מספיקות */
+  }
+  renderDots($('#previewDots'), 0, GOAL);
+}
+
+function showError(el, message) {
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+$('#joinForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = $('#formError');
+  errorEl.classList.add('hidden');
+
+  const name = $('#name').value.trim();
+  const phone = $('#phone').value.trim();
+
+  if (name.length < 2) return showError(errorEl, 'נא להזין שם מלא');
+  if (phone.replace(/\D/g, '').length < 9) return showError(errorEl, 'נא להזין מספר טלפון תקין');
+
+  const btn = $('#submitBtn');
+  setBusy(btn, true, 'רגע…');
+  try {
+    const card = await api('/api/join', {
+      method: 'POST',
+      body: { name, phone, email: $('#email').value.trim() },
+    });
+    sessionStorage.setItem('lpr_just_joined', card.existing ? 'existing' : 'new');
+    location.href = `/c/${card.publicId}`;
+  } catch (err) {
+    setBusy(btn, false);
+    showError(errorEl, err.message);
+  }
+});
+
+$('#recoverToggle').addEventListener('click', () => {
+  const form = $('#recoverForm');
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) $('#recoverPhone').focus();
+});
+
+$('#recoverForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = $('#recoverError');
+  errorEl.classList.add('hidden');
+
+  const btn = $('#recoverBtn');
+  setBusy(btn, true, 'מחפש…');
+  try {
+    const card = await api('/api/recover', { method: 'POST', body: { phone: $('#recoverPhone').value.trim() } });
+    toast('מצאנו! מעבירים אותך לכרטיסייה');
+    location.href = `/c/${card.publicId}`;
+  } catch (err) {
+    setBusy(btn, false);
+    showError(errorEl, err.message);
+  }
+});
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>סריקה · צוות לפריקון</title>
+<meta name="theme-color" content="#145530">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+  .scan-shell { max-width: 560px; margin: 0 auto; padding: 16px 14px 40px; }
+  .big-actions { display: grid; gap: 10px; margin-top: 16px; }
+  .result-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .result-name { font-size: 1.35rem; font-weight: 900; line-height: 1.25; }
+  .result-count { font-size: 2.3rem; font-weight: 900; color: var(--green-dark); line-height: 1; white-space: nowrap; }
+  .result-count small { font-size: 1rem; font-weight: 600; color: var(--muted); }
+  .mini-dots { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin: 14px 0; }
+  .mini-dot { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--line); background: #fff; }
+  .mini-dot.filled { background: var(--gold); border-color: var(--gold); }
+  .mini-dot.reward { border-style: dashed; border-color: var(--green); }
+  .mini-dot.reward.filled { background: var(--green); border-color: var(--green); }
+  .search-result {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .search-result:hover { border-color: var(--green); background: var(--green-light); }
+  #reader { border-radius: var(--radius); }
+  .camera-off { padding: 40px 20px; text-align: center; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); }
+
+  /* דיאלוג אישור — במקום confirm() של הדפדפן, שנחסם בחלק מהטלפונים */
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 95;
+    background: rgba(13, 58, 32, .5);
+    display: grid; place-items: center; padding: 20px;
+    animation: fadeIn .15s ease;
+  }
+  .confirm-box {
+    background: #fff; border-radius: var(--radius-lg); padding: 24px;
+    max-width: 380px; width: 100%; box-shadow: var(--shadow-lg); text-align: center;
+  }
+  .confirm-msg { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; white-space: pre-line; }
+  .confirm-sub { color: var(--muted); font-size: .88rem; margin-bottom: 18px; }
+  @keyframes fadeIn { from { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title">☘️ סריקת כרטיסייה</div>
+  <div class="row" style="gap:8px">
+    <a class="navlink hidden" id="adminLink" href="/admin">ניהול</a>
+    <span class="who" id="who"></span>
+    <button class="btn ghost sm" id="logoutBtn" style="background:rgba(255,255,255,.13);border:0;color:#fff">יציאה</button>
+  </div>
+</div>
+
+<main class="scan-shell">
+
+  <!-- מצלמה -->
+  <section id="cameraSection">
+    <div id="reader"></div>
+    <div id="cameraOff" class="camera-off hidden">
+      <p class="muted" style="margin-bottom:12px" id="cameraMsg">המצלמה כבויה</p>
+      <button class="btn" id="startCamBtn">הפעלת מצלמה 📷</button>
+    </div>
+    <div class="row between" style="margin-top:10px">
+      <button class="btn ghost sm" id="toggleCamBtn">עצירת מצלמה</button>
+      <span class="chip muted" id="camStatus">מאתחל…</span>
+    </div>
+  </section>
+
+  <!-- תוצאת סריקה -->
+  <section id="result" class="card scan-result hidden" style="margin-top:16px">
+    <div class="result-head">
+      <div class="grow">
+        <div class="result-name" id="rName">—</div>
+        <div class="small muted mono" id="rPhone"></div>
+      </div>
+      <div class="center">
+        <div class="result-count"><span id="rPunches">0</span><small id="rGoal">/8</small></div>
+        <div class="tiny muted">ניקובים</div>
+      </div>
+    </div>
+
+    <div class="mini-dots" id="rDots"></div>
+    <div id="rStatus" class="alert ok" style="margin-bottom:4px"></div>
+    <div id="rWarn" class="alert warn hidden" style="margin-top:10px"></div>
+
+    <div class="big-actions">
+      <button class="btn big" id="punchBtn">ניקוב ☕</button>
+      <button class="btn gold big hidden" id="redeemBtn">מימוש קפה חינם 🍀</button>
+      <div class="row" style="gap:8px">
+        <button class="btn ghost sm grow" id="punch2Btn">ניקוב ×2</button>
+        <button class="btn ghost sm grow" id="closeBtn">סגירה</button>
+      </div>
+    </div>
+
+    <details style="margin-top:14px">
+      <summary class="small muted" style="cursor:pointer">היסטוריה אחרונה</summary>
+      <div id="rHistory" class="small" style="margin-top:10px;display:grid;gap:6px"></div>
+    </details>
+  </section>
+
+  <!-- חיפוש ידני -->
+  <section class="card flat" style="margin-top:16px">
+    <h2 style="font-size:1rem;margin-bottom:10px">לא מצליחים לסרוק?</h2>
+    <div class="field" style="margin-bottom:10px">
+      <input class="input" id="searchInput" type="search" placeholder="חיפוש לפי שם, טלפון או מספר כרטיסייה"
+             autocomplete="off" enterkeyhint="search">
+    </div>
+    <div id="searchResults" class="stack" style="gap:8px"></div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script type="module">
+import { $, api, toast, escapeHtml, formatDateTime, buzz } from '/js/common.js';
+
+let cfg = { goal: 8, maxPunchesPerScan: 3 };
+let current = null;          // הכרטיסייה שעל המסך
+let scanner = null;
+let scanning = false;
+let lastCode = { value: '', at: 0 };
+
+/* ===== צליל משוב ===== */
+let audioCtx = null;
+function beep(kind = 'ok') {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const notes = { ok: [880], reward: [880, 1320], err: [220, 180] };
+    const seq = notes[kind] || notes.ok;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(seq[0], audioCtx.currentTime);
+    seq.slice(1).forEach((f, i) => osc.frequency.setValueAtTime(f, audioCtx.currentTime + 0.11 * (i + 1)));
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.11 * seq.length + 0.06);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.11 * seq.length + 0.08);
+  } catch {
+    /* ללא צליל */
+  }
+}
+
+/**
+ * אישור בתוך הדף. confirm() של הדפדפן חוסם את הסקריפט ובחלק מהטלפונים
+ * (Safari באייפון בפרט) פשוט לא נפתח — ואז הברמן/ית לוחץ/ת ולא קורה כלום.
+ */
+function confirmInline({ message, sub = '', okLabel = 'אישור', cancelLabel = 'ביטול', kind = '' }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box" role="alertdialog" aria-modal="true">
+        <p class="confirm-msg"></p>
+        <p class="confirm-sub"></p>
+        <div class="stack" style="gap:8px">
+          <button class="btn ${kind}" data-yes></button>
+          <button class="btn ghost" data-no></button>
+        </div>
+      </div>`;
+
+    overlay.querySelector('.confirm-msg').textContent = message;
+    const subEl = overlay.querySelector('.confirm-sub');
+    subEl.textContent = sub;
+    subEl.hidden = !sub;
+    overlay.querySelector('[data-yes]').textContent = okLabel;
+    overlay.querySelector('[data-no]').textContent = cancelLabel;
+
+    const finish = (value) => {
+      document.removeEventListener('keydown', onKey);
+      overlay.remove();
+      resolve(value);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') finish(false);
+      if (e.key === 'Enter') finish(true);
+    };
+
+    overlay.querySelector('[data-yes]').addEventListener('click', () => finish(true));
+    overlay.querySelector('[data-no]').addEventListener('click', () => finish(false));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
+    document.addEventListener('keydown', onKey);
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-yes]').focus();
+  });
+}
+
+/* ===== תצוגת כרטיסייה ===== */
+function renderMiniDots(punches, goal) {
+  const box = $('#rDots');
+  box.style.gridTemplateColumns = `repeat(${goal + 1}, 1fr)`;
+  box.innerHTML = '';
+  for (let i = 0; i <= goal; i++) {
+    const d = document.createElement('div');
+    d.className = 'mini-dot';
+    if (i === goal) d.classList.add('reward');
+    if (i < punches || (i === goal && punches >= goal)) d.classList.add('filled');
+    box.appendChild(d);
+  }
+}
+
+function showCard(payload) {
+  const s = payload.state;
+  current = s;
+
+  $('#rName').textContent = s.name || 'חבר/ת מועדון';
+  $('#rPhone').textContent = s.phone || s.publicId;
+  $('#rPunches').textContent = s.punches;
+  $('#rGoal').textContent = `/${s.goal}`;
+  renderMiniDots(s.punches, s.goal);
+
+  const status = $('#rStatus');
+  status.textContent = s.text.headline;
+  status.className = `alert ${s.rewardReady ? 'warn' : 'ok'}`;
+
+  const warn = $('#rWarn');
+  if (s.blocked) {
+    warn.textContent = '⛔ הכרטיסייה חסומה — פנו למנהל.';
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
+
+  $('#punchBtn').classList.toggle('hidden', s.rewardReady);
+  $('#punch2Btn').classList.toggle('hidden', s.rewardReady || cfg.maxPunchesPerScan < 2);
+  $('#redeemBtn').classList.toggle('hidden', !s.rewardReady);
+
+  if (payload.history) {
+    $('#rHistory').innerHTML = payload.history.length
+      ? payload.history
+          .map((e) => {
+            const labels = { punch: '☕ ניקוב', reward: '🍀 קפה חינם', adjust: '✏️ תיקון', join: '✨ הצטרפות', block: '⛔ חסימה', unblock: '✅ שחרור' };
+            return `<div class="row between"><span>${labels[e.type] || e.type}${e.staff_name ? ' · ' + escapeHtml(e.staff_name) : ''}</span>
+                    <span class="muted tiny">${formatDateTime(e.created_at)}</span></div>`;
+          })
+          .join('')
+      : '<span class="muted">אין עדיין פעילות</span>';
+  }
+
+  $('#result').classList.remove('hidden');
+  $('#result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeCard() {
+  current = null;
+  $('#result').classList.add('hidden');
+  $('#searchResults').innerHTML = '';
+  $('#searchInput').value = '';
+  lastCode = { value: '', at: 0 };
+}
+
+/* ===== פעולות ===== */
+async function lookup(code) {
+  try {
+    const payload = await api('/staff/api/lookup', { method: 'POST', body: { code } });
+    beep(payload.state.rewardReady ? 'reward' : 'ok');
+    buzz(payload.state.rewardReady ? [40, 70, 40] : 45);
+    showCard(payload);
+  } catch (err) {
+    beep('err');
+    toast(err.message, 'err');
+    lastCode = { value: '', at: 0 };
+  }
+}
+
+async function doPunch(count = 1, force = false) {
+  if (!current) return;
+  const btn = count > 1 ? $('#punch2Btn') : $('#punchBtn');
+  btn.disabled = true;
+
+  try {
+    const res = await api('/staff/api/punch', {
+      method: 'POST',
+      body: { code: current.token, count, force },
+    });
+    beep(res.state.rewardReady ? 'reward' : 'ok');
+    buzz(res.state.rewardReady ? [50, 80, 50, 80] : 60);
+    toast(res.message, res.state.rewardReady ? 'gold' : '', 3800);
+    showCard({ state: res.state, history: null });
+    setTimeout(closeCard, 3500);
+  } catch (err) {
+    if (err.code === 'cooldown') {
+      beep('err');
+      buzz([80, 60, 80]);
+      const again = await confirmInline({
+        message: 'הכרטיסייה כבר נוקבה הרגע',
+        sub: `הניקוב האחרון היה לפני ${err.data.secondsAgo} שניות. לנקב שוב?`,
+        okLabel: 'כן, לנקב שוב',
+        cancelLabel: 'לא, זו הייתה טעות',
+      });
+      if (again) {
+        btn.disabled = false;
+        return doPunch(count, true);
+      }
+      closeCard();
+    } else if (err.code === 'reward_pending') {
+      beep('reward');
+      toast(err.message, 'gold', 4000);
+      if (err.data?.state) showCard({ state: err.data.state, history: null });
+    } else {
+      beep('err');
+      toast(err.message, 'err');
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function doRedeem() {
+  if (!current) return;
+
+  const confirmed = await confirmInline({
+    message: `לממש קפה חינם עבור ${current.name || 'הלקוח/ה'}?`,
+    sub: 'הכרטיסייה תתאפס ל-0 ותתחיל מחדש.',
+    okLabel: 'כן, הקפה עלינו 🍀',
+    cancelLabel: 'ביטול',
+    kind: 'gold',
+  });
+  if (!confirmed) return;
+
+  const btn = $('#redeemBtn');
+  btn.disabled = true;
+  try {
+    const res = await api('/staff/api/redeem', { method: 'POST', body: { code: current.token } });
+    beep('reward');
+    buzz([60, 90, 60]);
+    toast(res.message, 'gold', 4000);
+    showCard({ state: res.state, history: null });
+    setTimeout(closeCard, 3500);
+  } catch (err) {
+    beep('err');
+    toast(err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ===== מצלמה ===== */
+function onScan(text) {
+  const now = Date.now();
+  if (text === lastCode.value && now - lastCode.at < 4000) return;
+  lastCode = { value: text, at: now };
+  lookup(text);
+}
+
+async function startCamera() {
+  if (typeof Html5Qrcode === 'undefined') {
+    $('#cameraMsg').textContent = 'ספריית הסריקה לא נטענה (אין אינטרנט?). השתמשו בחיפוש הידני למטה.';
+    $('#cameraOff').classList.remove('hidden');
+    $('#camStatus').textContent = 'לא זמין';
+    return;
+  }
+  try {
+    // html5-qrcode מודד את גודל המכל בזמן ההפעלה, ולכן הוא חייב להיות
+    // גלוי לפני הקריאה ל-start — אחרת ההפעלה נכשלת בלי הסבר.
+    $('#reader').classList.remove('hidden');
+    scanner ||= new Html5Qrcode('reader', { verbose: false });
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.2 },
+      onScan,
+      () => {}
+    );
+    scanning = true;
+    $('#cameraOff').classList.add('hidden');
+    $('#camStatus').textContent = 'סורק…';
+    $('#toggleCamBtn').textContent = 'עצירת מצלמה';
+  } catch (err) {
+    scanning = false;
+    $('#cameraMsg').textContent =
+      String(err).includes('NotAllowed') || String(err).includes('Permission')
+        ? 'אין הרשאה למצלמה. אפשרו גישה בהגדרות הדפדפן ונסו שוב.'
+        : `לא הצלחתי להפעיל מצלמה: ${err}`;
+    $('#reader').classList.add('hidden');
+    $('#cameraOff').classList.remove('hidden');
+    $('#camStatus').textContent = 'כבויה';
+    $('#toggleCamBtn').textContent = 'הפעלת מצלמה';
+  }
+}
+
+async function stopCamera() {
+  if (scanner && scanning) {
+    try {
+      await scanner.stop();
+    } catch {
+      /* כבר נעצרה */
+    }
+  }
+  scanning = false;
+  $('#camStatus').textContent = 'כבויה';
+  $('#toggleCamBtn').textContent = 'הפעלת מצלמה';
+  $('#reader').classList.add('hidden');
+  $('#cameraOff').classList.remove('hidden');
+  $('#cameraMsg').textContent = 'המצלמה כבויה';
+}
+
+/* ===== חיפוש ידני ===== */
+let searchTimer = null;
+$('#searchInput').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  const term = e.target.value.trim();
+  if (term.length < 2) {
+    $('#searchResults').innerHTML = '';
+    return;
+  }
+  searchTimer = setTimeout(async () => {
+    try {
+      const { results } = await api(`/staff/api/search?q=${encodeURIComponent(term)}`);
+      $('#searchResults').innerHTML = results.length
+        ? results
+            .map(
+              (r) => `<div class="search-result" data-id="${escapeHtml(r.publicId)}">
+                <div><div class="bold">${escapeHtml(r.name || 'ללא שם')}</div>
+                     <div class="tiny muted mono">${escapeHtml(r.phone || r.publicId)}</div></div>
+                <span class="chip ${r.rewardReady ? 'gold' : ''}">${r.punches}/${r.goal}</span>
+              </div>`
+            )
+            .join('')
+        : '<p class="muted small">לא נמצאו תוצאות</p>';
+    } catch (err) {
+      toast(err.message, 'err');
+    }
+  }, 280);
+});
+
+$('#searchResults').addEventListener('click', (e) => {
+  const row = e.target.closest('.search-result');
+  if (row) lookup(row.dataset.id);
+});
+
+/* ===== חיווט ===== */
+$('#punchBtn').addEventListener('click', () => doPunch(1));
+$('#punch2Btn').addEventListener('click', () => doPunch(2));
+$('#redeemBtn').addEventListener('click', doRedeem);
+$('#closeBtn').addEventListener('click', closeCard);
+$('#startCamBtn').addEventListener('click', startCamera);
+$('#toggleCamBtn').addEventListener('click', () => (scanning ? stopCamera() : startCamera()));
+
+$('#logoutBtn').addEventListener('click', async () => {
+  await api('/staff/logout', { method: 'POST' }).catch(() => {});
+  location.href = '/staff/login';
+});
+
+// שחרור המצלמה כשמשאירים את הדף ברקע — חוסך סוללה בטלפון של הקופה
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && scanning) stopCamera();
+});
+
+(async () => {
+  try {
+    const me = await api('/staff/api/me');
+    cfg = me;
+    $('#who').textContent = me.staff.name;
+    if (me.staff.role === 'admin') $('#adminLink').classList.remove('hidden');
+    $('#rGoal').textContent = `/${me.goal}`;
+  } catch {
+    location.href = '/staff/login';
+    return;
+  }
+  startCamera();
+})();
+</script>
+</body>
+</html>

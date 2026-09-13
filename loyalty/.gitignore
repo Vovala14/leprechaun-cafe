@@ -1,0 +1,19 @@
+node_modules/
+.env
+.env.local
+data/
+backups/
+tmp/
+
+# תעודות — אף פעם לא ב-git. שומרים את ההסבר בלבד.
+certs/*
+!certs/README.txt
+*.p12
+*.cer
+pass.key
+pass.pem
+wwdr.pem
+*-service-account.json
+
+.DS_Store
+npm-debug.log*

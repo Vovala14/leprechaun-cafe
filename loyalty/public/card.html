@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>הכרטיסייה שלי · קפה לפריקון</title>
+<meta name="theme-color" content="#1a6b3c">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<main class="wrap" id="app" hidden>
+  <header class="brand">
+    <div class="brand-mark" aria-hidden="true">☘️</div>
+    <h1 class="brand-name" id="bizName">קפה לפריקון</h1>
+    <p class="brand-sub">מועדון הקפה</p>
+  </header>
+
+  <div id="welcome" class="alert ok hidden" style="margin-bottom:16px"></div>
+
+  <!-- הכרטיסייה -->
+  <section class="punchcard" id="punchcard" aria-live="polite" style="margin-bottom:18px">
+    <div class="punchcard-top">
+      <div>
+        <div class="punchcard-label">כרטיסיית קפה</div>
+        <div class="punchcard-owner" id="ownerName">—</div>
+      </div>
+      <div class="center">
+        <div class="punchcard-counter"><span id="punchCount">0</span><small id="goalText">/8</small></div>
+        <div class="punchcard-label">ניקובים</div>
+      </div>
+    </div>
+    <div class="dots" id="dots"></div>
+    <div class="punchcard-status" id="status">טוען…</div>
+  </section>
+
+  <!-- QR להצגה בקופה -->
+  <section class="card" style="margin-bottom:16px">
+    <h2>הציגו בקופה</h2>
+    <p class="lead">הברמן/ית סורק/ת את הקוד והניקוב נוסף מיד.</p>
+    <div class="qr-box">
+      <img id="qr" alt="קוד QR של הכרטיסייה" width="640" height="640">
+    </div>
+    <p class="tiny muted center mono" id="cardId" style="margin-top:10px"></p>
+    <button class="btn ghost sm" id="brightBtn" style="width:100%;margin-top:10px">הגדל בהירות מסך 🔆</button>
+  </section>
+
+  <!-- ארנקים -->
+  <section class="card" id="walletCard" style="margin-bottom:16px">
+    <h2>שמרו את הכרטיסייה בטלפון</h2>
+    <p class="lead">היא תתעדכן לבד אחרי כל ניקוב — בלי להיכנס לאתר.</p>
+    <div class="wallet-btns">
+      <a class="wallet-btn hidden" id="appleBtn" href="#">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M17.05 12.54c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.61-1.7-3.18-1.73-1.35-.14-2.64.79-3.33.79-.69 0-1.75-.77-2.87-.75-1.48.02-2.84.86-3.6 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.25 2.74 2.21 1.1-.05 1.52-.71 2.85-.71 1.33 0 1.71.71 2.87.69 1.19-.02 1.94-1.08 2.66-2.14.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.51zM14.88 5.2c.61-.74 1.02-1.77.91-2.8-.88.04-1.94.59-2.57 1.32-.56.65-1.05 1.7-.92 2.7.98.08 1.98-.5 2.58-1.22z"/>
+        </svg>
+        <span>הוספה ל־Apple Wallet</span>
+      </a>
+
+      <a class="wallet-btn google hidden" id="googleBtn" href="#">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5V9H3V7.5z"/>
+          <path fill="#34A853" d="M3 9h18v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5V9z"/>
+          <path fill="#FBBC04" d="M14 12h7v3.5h-7a1.75 1.75 0 0 1 0-3.5z"/>
+        </svg>
+        <span>שמירה ב־Google Wallet</span>
+      </a>
+    </div>
+    <div id="walletNote" class="alert warn hidden" style="margin-top:12px"></div>
+    <button class="btn ghost sm" id="shareBtn" style="width:100%;margin-top:10px">שמירת קישור לכרטיסייה 🔗</button>
+  </section>
+
+  <!-- הסבר -->
+  <section class="card flat" style="margin-bottom:16px">
+    <h2 style="margin-bottom:10px">איך זה עובד</h2>
+    <ol style="padding-inline-start:20px;display:grid;gap:7px;font-size:.92rem">
+      <li>קונים קפה ומציגים את הכרטיסייה בקופה.</li>
+      <li>סריקה מהירה — הניקוב נוסף אוטומטית.</li>
+      <li id="ruleLi">אחרי 8 ניקובים — הקפה התשיעי עלינו ☕</li>
+    </ol>
+  </section>
+
+  <!-- סטטיסטיקה אישית -->
+  <section class="metrics" style="margin-bottom:16px">
+    <div class="metric"><div class="v" id="mTotal">0</div><div class="k">קפה שקנית</div></div>
+    <div class="metric"><div class="v" id="mRewards">0</div><div class="k">קפה חינם שקיבלת</div></div>
+    <div class="metric"><div class="v" id="mSince">—</div><div class="k">חבר/ה מאז</div></div>
+  </section>
+
+  <footer class="footer">
+    <div id="footerMeta"></div>
+    <div style="margin-top:6px"><a id="instaLink" href="#" target="_blank" rel="noopener">עקבו אחרינו באינסטגרם</a></div>
+  </footer>
+</main>
+
+<div id="loader" class="wrap center" style="padding-top:80px">
+  <div class="spinner dark" style="margin:0 auto 12px"></div>
+  <p class="muted">טוען את הכרטיסייה…</p>
+</div>
+
+<script type="module">
+import { $, api, toast, renderDots, formatDate, isIOS, isAndroid, buzz } from '/js/common.js';
+
+const publicId = location.pathname.split('/').filter(Boolean)[1];
+let previous = null;
+
+async function load({ animate = false } = {}) {
+  const card = await api(`/api/card/${publicId}`);
+  render(card, animate);
+  return card;
+}
+
+function render(card, animate) {
+  $('#bizName').textContent = card.business.name;
+  document.title = `הכרטיסייה שלי · ${card.business.name}`;
+  $('#ownerName').textContent = card.name || 'חבר/ת מועדון';
+  $('#punchCount').textContent = card.punches;
+  $('#goalText').textContent = `/${card.goal}`;
+  $('#cardId').textContent = `מס׳ כרטיסייה: ${card.publicId}`;
+  $('#ruleLi').textContent = `אחרי ${card.goal} ניקובים — הקפה ה־${card.goal + 1} עלינו ☕`;
+
+  const grew = previous !== null && card.punches > previous;
+  renderDots($('#dots'), card.punches, card.goal, animate && grew ? card.punches - 1 : -1);
+
+  const statusEl = $('#status');
+  statusEl.textContent = card.text.headline;
+  statusEl.classList.toggle('ready', card.rewardReady);
+
+  if (card.blocked) {
+    statusEl.textContent = 'הכרטיסייה מושהית — פנו אלינו בקופה';
+    statusEl.classList.remove('ready');
+  }
+
+  $('#mTotal').textContent = card.totalPunches;
+  $('#mRewards').textContent = card.totalRewards;
+  $('#mSince').textContent = formatDate(card.createdAt);
+
+  $('#qr').src = `/c/${card.publicId}/qr.png?size=640&v=${encodeURIComponent(card.updatedAt)}`;
+
+  $('#footerMeta').innerHTML =
+    `${card.business.name} · ${card.business.address}<br><a href="tel:${card.business.phone}">${card.business.phone}</a>`;
+  $('#instaLink').href = card.business.instagram;
+
+  // כפתורי ארנק — מציגים לפי זמינות ולפי סוג המכשיר
+  const apple = $('#appleBtn');
+  const google = $('#googleBtn');
+  if (card.wallets.apple) {
+    apple.href = card.wallets.appleUrl;
+    apple.classList.remove('hidden');
+  }
+  if (card.wallets.google) {
+    google.href = card.wallets.googleUrl;
+    google.classList.remove('hidden');
+  }
+  if (isIOS() && card.wallets.apple) google.style.order = '2';
+  if (isAndroid() && card.wallets.google) apple.style.order = '2';
+
+  if (!card.wallets.apple && !card.wallets.google) {
+    const note = $('#walletNote');
+    note.textContent = 'שמירה בארנק הטלפון תופעל בקרוב. בינתיים אפשר לשמור את הדף הזה כסימנייה — הוא מתעדכן לבד.';
+    note.classList.remove('hidden');
+  }
+
+  if (grew) {
+    buzz([30, 60, 30]);
+    toast(card.rewardReady ? 'הכרטיסייה מלאה! הקפה הבא עלינו 🍀' : `ניקוב חדש! עוד ${card.remaining} לקפה חינם`,
+      card.rewardReady ? 'gold' : '');
+  }
+  previous = card.punches;
+}
+
+$('#shareBtn').addEventListener('click', async () => {
+  const url = location.href;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'הכרטיסייה שלי בלפריקון', url });
+      return;
+    } catch {
+      /* המשתמש ביטל */
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('הקישור הועתק ✓');
+  } catch {
+    toast('העתיקו את הכתובת מסרגל הדפדפן', 'err');
+  }
+});
+
+// טריק בהירות: מסך לבן מלא מאחורי ה-QR עוזר לסורקים איטיים
+$('#brightBtn').addEventListener('click', () => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText =
+    'position:fixed;inset:0;background:#fff;z-index:100;display:grid;place-items:center;gap:16px;padding:24px;cursor:pointer';
+  overlay.innerHTML =
+    `<img src="/c/${publicId}/qr.png?size=900" alt="קוד QR" style="width:min(78vw,420px);border-radius:12px">
+     <p style="color:#6b7c73;font-size:.9rem">הקישו בכל מקום לסגירה</p>`;
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+});
+
+// רענון: כשחוזרים לדף, ובמרווחים קבועים כל עוד הוא גלוי
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) load({ animate: true }).catch(() => {});
+});
+setInterval(() => {
+  if (!document.hidden) load({ animate: true }).catch(() => {});
+}, 20000);
+
+(async () => {
+  try {
+    await load();
+    $('#loader').remove();
+    $('#app').hidden = false;
+
+    const joined = sessionStorage.getItem('lpr_just_joined');
+    if (joined) {
+      sessionStorage.removeItem('lpr_just_joined');
+      const el = $('#welcome');
+      el.textContent = joined === 'existing'
+        ? 'מצאנו את הכרטיסייה הקיימת שלך ☘️'
+        : 'ברוכים הבאים למועדון! שמרו את הכרטיסייה בארנק הטלפון 👇';
+      el.classList.remove('hidden');
+    }
+  } catch (err) {
+    $('#loader').innerHTML =
+      `<div class="alert err">${err.message}</div>
+       <a class="btn ghost" href="/join" style="margin-top:14px">חזרה לעמוד ההצטרפות</a>`;
+  }
+})();
+</script>
+</body>
+</html>

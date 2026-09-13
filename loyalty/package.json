@@ -1,0 +1,34 @@
+{
+  "name": "leprechaun-loyalty",
+  "version": "1.0.0",
+  "private": true,
+  "description": "מועדון לקוחות דיגיטלי לקפה לפריקון — כרטיסייה ל-Apple Wallet ו-Google Wallet",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "staff": "node scripts/create-staff.mjs",
+    "assets": "node scripts/make-pass-assets.mjs",
+    "google:class": "node scripts/create-google-class.mjs",
+    "backup": "node scripts/backup.mjs",
+    "verify": "node scripts/verify-pass.mjs",
+    "secret": "node scripts/gen-secret.mjs",
+    "seed": "node scripts/seed-demo.mjs",
+    "pack": "node scripts/pack-secrets.mjs",
+    "test": "node scripts/test-e2e.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1",
+    "node-forge": "^1.3.1",
+    "qrcode": "^1.5.4"
+  }
+}
