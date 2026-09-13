@@ -23,21 +23,26 @@ Railway מריץ קונטיינר רגיל עם דיסק — בדיוק מה ש�
 
 ---
 
-## שלב 1 — דחיפת הקוד ל‑GitHub
+## שלב 1 — מיזוג הקוד ל‑GitHub
 
-הריפו `Vovala14/leprechaun-cafe` **ציבורי**. זה בסדר: אין בקוד שום סוד.
-כל הסודות יושבים ב‑`.env` וב‑`certs/`, ושניהם ב‑`.gitignore` וב‑`.dockerignore`.
+הקוד כבר דחוף לענף `loyalty-system` ומחכה ב‑PR:
+**[Vovala14/leprechaun-cafe#1](https://github.com/Vovala14/leprechaun-cafe/pull/1)**
 
-מהתיקייה הראשית של הפרויקט:
+עברו על השינויים ולחצו **Merge**. Railway פורס מהענף הראשי, ולכן זה חייב להיות ממוזג לפני שלב 5.
+
+> הריפו **ציבורי**, וזה בסדר: אין בקוד שום סוד. כל הסודות יושבים ב‑`.env` וב‑`certs/`,
+> ושניהם מוחרגים גם ב‑`.gitignore` וגם ב‑`.dockerignore`.
+
+מכאן והלאה, עדכונים עולים כך:
 
 ```bash
-git add loyalty && git commit -m "Add digital loyalty card system" && git push
+git add loyalty && git commit -m "תיאור השינוי" && git push
 ```
 
-לפני שדוחפים, ודאו בעיניים שאין סודות:
+ואם תרצו לוודא בעצמכם שלא נכנס סוד למעקב, בכל שלב:
 
 ```bash
-git status --short loyalty && git ls-files loyalty | grep -E '\.env$|certs/|\.p12$|\.key$' || echo "נקי — אין סודות במעקב"
+git ls-files loyalty | grep -E '\.env$|\.p12$|\.key$|service-account' || echo "נקי"
 ```
 
 ---
