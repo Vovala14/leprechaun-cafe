@@ -1,0 +1,17 @@
+# מה לא נשלח ל-Railway בפריסה ישירה (railway up).
+# הסודות מגיעים ממשתני סביבה, לא מקבצים.
+.env
+.env.*
+certs/
+*.p12
+*.cer
+*.key
+*.pem
+*-service-account.json
+
+data/
+backups/
+tmp/
+
+node_modules/
+.git/
